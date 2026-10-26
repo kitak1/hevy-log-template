@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BIG3 成長記録</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --ring: rgba(11,11,11,0.10);
+  --s1: #2a78d6;   /* スクワット */
+  --s2: #eb6834;   /* ベンチプレス */
+  --s3: #1baf7a;   /* デッドリフト */
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7;
+  --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 14px/1.5 system-ui, -apple-system, "Segoe UI", "Hiragino Sans", sans-serif;
+}
+main { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: var(--ink-2); margin: 0 0 20px; font-size: 13px; }
+.card { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.card h2 { font-size: 14px; margin: 0 0 2px; font-weight: 600; }
+.card .note { color: var(--ink-2); font-size: 12px; margin: 0 0 8px; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin: 0 0 16px; }
+.ctl[hidden], .seg[hidden] { display: none; }
+.seg { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.seg .lab { padding: 0 10px; color: var(--ink-2); font-size: 12px; }
+.seg button { font: inherit; font-size: 13px; color: var(--ink-2); background: transparent; border: 0; border-left: 1px solid var(--axis);
+  padding: 6px 12px; cursor: pointer; min-height: 32px; }
+.seg .lab + button, .seg > button:first-child { border-left: 0; }
+.seg button:hover { background: var(--grid); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); font-weight: 600; }
+.seg button:focus-visible { outline: 2px solid var(--s1); outline-offset: -2px; }
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi { background: var(--surface); border: 1px solid var(--ring); border-radius: 12px; padding: 12px 14px; }
+.kpi .label { color: var(--ink-2); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+.kpi .label i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+.kpi .val { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
+.kpi .val small { font-size: 13px; font-weight: 400; color: var(--ink-2); margin-left: 2px; }
+.kpi .goal { color: var(--ink-2); font-size: 12px; }
+.bar { height: 6px; background: var(--grid); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+.bar b { display: block; height: 100%; border-radius: 3px; background: var(--ink-2); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ink-2); font-size: 12px; margin: 0 0 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend svg { width: 22px; height: 10px; overflow: visible; }
+.panel { position: relative; }
+.panel + .panel { margin-top: 8px; }
+.panel h3 { font-size: 13px; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.panel h3 i { width: 10px; height: 3px; border-radius: 2px; display: inline-block; }
+svg.chart { display: block; width: 100%; touch-action: pan-y; }
+.tip {
+  position: absolute; pointer-events: none; display: none; z-index: 2; min-width: 140px;
+  background: var(--surface); border: 1px solid var(--axis); border-radius: 8px;
+  padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.tip .d { color: var(--ink-2); margin-bottom: 4px; }
+.tip .row { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.tip .row i { width: 10px; height: 2px; display: inline-block; border-radius: 1px; }
+.tip .row b { font-size: 13px; }
+.tip .row span { color: var(--ink-2); }
+details summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--grid); }
+th { color: var(--ink-2); font-weight: 500; font-size: 12px; }
+td.num, th.num { text-align: right; }
+.up { color: var(--ink-2); }
+@media (max-width: 560px) {
+  .kpis { grid-template-columns: repeat(2, 1fr); }
+  .kpi .val { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <h1>BIG3 成長記録</h1>
+  <p class="sub" id="sub"></p>
+  <div class="ctl">
+    <div class="seg" id="seg-mode" role="group" aria-label="指標">
+      <button data-v="weight" aria-pressed="true">最大重量</button>
+      <button data-v="rm" aria-pressed="false">推定1RM</button>
+    </div>
+    <div class="seg" id="seg-cap" role="group" aria-label="1RMの計算に使う回数" hidden>
+      <span class="lab">計算に使う回数</span>
+      <button data-v="5" aria-pressed="false">5回以下</button>
+      <button data-v="8" aria-pressed="false">8回以下</button>
+      <button data-v="12" aria-pressed="true">12回以下</button>
+    </div>
+  </div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="card">
+    <h2 id="h-total"></h2>
+    <p class="note" id="n-total"></p>
+    <div class="legend">
+      <span><svg viewBox="0 0 22 10"><path d="M0 5H22" stroke="var(--ink-2)" stroke-width="2"/></svg><b id="lg-total" style="font-weight:400"></b></span>
+      <span><svg viewBox="0 0 22 10"><path d="M0 5H22" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>年末目標</span>
+    </div>
+    <div class="panel" id="p-total"></div>
+  </div>
+
+  <div class="card">
+    <h2>種目ごとの推移</h2>
+    <p class="note" id="n-lifts"></p>
+    <div class="legend">
+      <span><svg viewBox="0 0 22 10"><circle cx="11" cy="5" r="3.5" fill="var(--ink-2)" fill-opacity=".55"/></svg><b id="lg-dot" style="font-weight:400"></b></span>
+      <span><svg viewBox="0 0 22 10"><path d="M0 5H22" stroke="var(--ink-2)" stroke-width="2"/></svg>自己ベスト</span>
+      <span><svg viewBox="0 0 22 10"><path d="M0 5H22" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="4 3"/></svg>年末目標</span>
+    </div>
+    <div id="lifts"></div>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary id="h-table"></summary>
+      <table id="pbtable"></table>
+    </details>
+  </div>
+  <p class="sub" id="foot"></p>
+</main>
+<div class="tip" id="tip"></div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('data').textContent);
+const NS = 'http://www.w3.org/2000/svg';
+const COLORS = ['var(--s1)', 'var(--s2)', 'var(--s3)'];   // スクワット / ベンチ / デッド (固定順)
+const KEYS = ['sq', 'bp', 'dl'];
+const T = d => Date.parse(d + 'T00:00:00Z');
+const fmtDate = d => d.replace(/-/g, '/');
+const fmtKg = v => (Math.round(v * 100) / 100).toString();
+const tip = document.getElementById('tip');
+
+function el(name, attrs, parent, text) {
+  const e = document.createElementNS(NS, name);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (text != null) e.textContent = text;
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function niceStep(max) {
+  const raw = max / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+
+const allDays = D.lifts.flatMap(l => l.days.map(p => T(p.d)));
+const t0 = Math.min(...allDays), t1 = Math.max(...allDays);
+const state = { mode: 'weight', cap: 12 };
+const rm = (w, r) => r === 1 ? w : w * (1 + r / 30);   // Epley式
+const fmtV = v => state.mode === 'rm' ? v.toFixed(1) : fmtKg(v);
+
+/* 種目ごとの系列: 各日の代表セット(最重量 or 最高推定1RM)と、そこまでの自己ベスト */
+function series(l) {
+  let best = 0;
+  const out = [];
+  for (const day of l.days) {
+    let top = null;
+    for (const [w, r] of day.sets) {
+      if (state.mode === 'rm' && r > state.cap) continue;
+      const v = state.mode === 'rm' ? rm(w, r) : w;
+      if (!top || v > top.v || (v === top.v && r > top.r)) top = { v, w, r };
+    }
+    if (!top) continue;
+    const isNew = top.v > best + 1e-9;
+    out.push({ d: day.d, ...top, prev: best, new: isNew, pb: isNew ? top.v : best });
+    if (isNew) best = top.v;
+  }
+  return out;
+}
+/* 3種目すべてに記録がある日以降の、自己ベスト合計 */
+function totalSeries(S) {
+  const dates = [...new Set(S.flatMap(s => s.map(p => p.d)))].sort();
+  const cur = [0, 0, 0], idx = [0, 0, 0], out = [];
+  for (const d of dates) {
+    S.forEach((s, i) => { while (idx[i] < s.length && s[idx[i]].d <= d) { cur[i] = s[idx[i]].pb; idx[i]++; } });
+    if (cur.every(Boolean)) {
+      const v = cur[0] + cur[1] + cur[2];
+      if (!out.length || Math.abs(out[out.length - 1].v - v) > 1e-9) out.push({ d, v, vals: [...cur] });
+    }
+  }
+  return out;
+}
+
+/* 1つのパネル: dots(任意) + 階段線 + 目標線 + ホバー */
+function panel(host, o) {
+  host.textContent = '';
+  const W = host.clientWidth || 600, H = o.height;
+  const m = { l: 40, r: 12, t: 20, b: 24 };
+  const svg = el('svg', { class: 'chart', viewBox: `0 0 ${W} ${H}`, height: H, role: 'img', 'aria-label': o.aria }, host);
+  const x = t => m.l + (t - t0) / (t1 - t0) * (W - m.l - m.r);
+  const step = niceStep(o.yMax), top = Math.ceil(o.yMax / step) * step;
+  const y = v => H - m.b - v / top * (H - m.t - m.b);
+
+  for (let v = 0; v <= top; v += step) {
+    el('line', { x1: m.l, x2: W - m.r, y1: y(v), y2: y(v), stroke: v === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, svg);
+    el('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end', fill: 'var(--muted)', 'font-size': 11 }, svg, v);
+  }
+  // 時間軸: 期間が約9か月以内なら1か月ごと、それより長ければ3か月ごと
+  const sm = (t1 - t0) / 86400000 <= 270 ? 1 : 3;
+  const first = new Date(t0), tickY = first.getUTCFullYear(), tickM = Math.floor(first.getUTCMonth() / sm) * sm;
+  for (let k = 0; ; k++) {
+    const dt = Date.UTC(tickY, tickM + k * sm, 1);
+    if (dt > t1) break;
+    if (dt < t0) continue;
+    const d = new Date(dt);
+    el('line', { x1: x(dt), x2: x(dt), y1: H - m.b, y2: H - m.b + 4, stroke: 'var(--axis)' }, svg);
+    el('text', { x: x(dt), y: H - 6, 'text-anchor': 'middle', fill: 'var(--muted)', 'font-size': 11 },
+       svg, `${String(d.getUTCFullYear()).slice(2)}/${d.getUTCMonth() + 1}`);
+  }
+  // 年末目標
+  el('line', { x1: m.l, x2: W - m.r, y1: y(o.goal), y2: y(o.goal), stroke: 'var(--muted)', 'stroke-width': 1.5, 'stroke-dasharray': '4 3' }, svg);
+  el('text', { x: m.l + 4, y: y(o.goal) - 5, fill: 'var(--muted)', 'font-size': 11 }, svg, `年末目標 ${o.goal}kg`);
+
+  // 自己ベスト階段線
+  let d = '', prev = null;
+  o.step.forEach(p => {
+    d += prev == null ? `M${x(p.t)} ${y(p.v)}` : `H${x(p.t)}V${y(p.v)}`;
+    prev = p.v;
+  });
+  d += `H${x(t1)}`;
+  el('path', { d, fill: 'none', stroke: o.color, 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+  // 各日の点 (2px の面色リングで重なりを分離)
+  (o.dots || []).forEach(p => el('circle', { cx: x(p.t), cy: y(p.v), r: 3, fill: o.color, 'fill-opacity': 0.6, stroke: 'var(--surface)', 'stroke-width': 1 }, svg));
+  // 終端ラベル
+  const last = o.step[o.step.length - 1];
+  el('text', { x: x(t1) - 4, y: y(last.v) - 8, 'text-anchor': 'end', fill: 'var(--ink)', 'font-size': 13, 'font-weight': 600 }, svg, `${fmtV(last.v)}kg`);
+  el('circle', { cx: x(t1), cy: y(last.v), r: 4, fill: o.color, stroke: 'var(--surface)', 'stroke-width': 2 }, svg);
+
+  // ホバー: 縦線 + 最寄りの日に吸着
+  const cross = el('line', { y1: m.t, y2: H - m.b, stroke: 'var(--axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+  const mark = el('circle', { r: 5, fill: o.color, stroke: 'var(--surface)', 'stroke-width': 2, visibility: 'hidden' }, svg);
+  const hit = el('rect', { x: m.l, y: 0, width: W - m.l - m.r, height: H - m.b, fill: 'transparent', tabindex: 0 }, svg);
+  function show(clientX) {
+    const r = svg.getBoundingClientRect();
+    const px = (clientX - r.left) * (W / r.width);
+    let best = o.hover[0];
+    for (const h of o.hover) if (Math.abs(x(h.t) - px) < Math.abs(x(best.t) - px)) best = h;
+    cross.setAttribute('x1', x(best.t)); cross.setAttribute('x2', x(best.t)); cross.setAttribute('visibility', 'visible');
+    mark.setAttribute('cx', x(best.t)); mark.setAttribute('cy', y(best.y)); mark.setAttribute('visibility', 'visible');
+    tip.textContent = '';
+    const dd = document.createElement('div'); dd.className = 'd'; dd.textContent = fmtDate(best.d); tip.appendChild(dd);
+    best.rows.forEach(row => {
+      const e = document.createElement('div'); e.className = 'row';
+      const k = document.createElement('i'); k.style.background = row.color || o.color; e.appendChild(k);
+      const b = document.createElement('b'); b.textContent = row.v; e.appendChild(b);
+      const s = document.createElement('span'); s.textContent = row.label; e.appendChild(s);
+      tip.appendChild(e);
+    });
+    tip.style.display = 'block';
+    const hr = host.getBoundingClientRect(), tw = tip.offsetWidth;
+    let left = x(best.t) * (r.width / W) + 12;
+    if (left + tw > hr.width) left = x(best.t) * (r.width / W) - tw - 12;
+    tip.style.left = hr.left + window.scrollX + Math.max(0, left) + 'px';
+    tip.style.top = hr.top + window.scrollY + 24 + 'px';
+  }
+  const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); mark.setAttribute('visibility', 'hidden'); };
+  hit.addEventListener('pointermove', e => show(e.clientX));
+  hit.addEventListener('pointerdown', e => show(e.clientX));
+  hit.addEventListener('pointerleave', hide);
+  hit.addEventListener('blur', hide);
+}
+
+function render() {
+  const rmMode = state.mode === 'rm';
+  const S = D.lifts.map(series);
+  const total = totalSeries(S);
+  const last = total[total.length - 1];
+
+  document.getElementById('h-total').textContent = rmMode ? '推定1RM(自己ベスト)合計の推移' : '自己ベスト合計の推移';
+  document.getElementById('n-total').textContent = rmMode
+    ? 'スクワット + ベンチプレス + デッドリフト の推定1RMの自己ベストの合計'
+    : 'スクワット + ベンチプレス + デッドリフト の自己ベスト(最大重量)の合計';
+  document.getElementById('lg-total').textContent = rmMode ? '推定1RM合計' : '自己ベスト合計';
+  document.getElementById('lg-dot').textContent = rmMode ? '各日の最高推定1RM' : '各日の最重量セット';
+  document.getElementById('n-lifts').textContent = rmMode
+    ? `点は各日の最高推定1RM(${state.cap}回以下のセットから計算、補助ありを除く)。線はそれまでの自己ベスト。元のセットはタップ/ホバーで確認`
+    : '点は各日の最重量セット(補助ありを除く)。線はそれまでの自己ベスト。回数はタップ/ホバーで確認';
+  document.getElementById('h-table').textContent = rmMode ? '推定1RMの自己ベスト更新の記録 (表)' : '自己ベスト更新の記録 (表)';
+  document.getElementById('foot').textContent = rmMode
+    ? `推定1RM = 重量 × (1 + 回数 ÷ 30) (1回は重量そのまま)。回数が多いセットほど高めに出ます。補助ありのセットは除いています。READMEの表は12回以下 (補助ありを含む) で計算しています。`
+    : '重量は実際に挙げた最大重量 (推定1RMではありません)。補助ありのセットは除いています。';
+  document.getElementById('seg-cap').hidden = !rmMode;
+
+  /* カード */
+  const k = document.getElementById('kpis');
+  k.textContent = '';
+  const tile = (label, color, v, goal) => {
+    const e = document.createElement('div'); e.className = 'kpi';
+    const l = document.createElement('div'); l.className = 'label';
+    const i = document.createElement('i'); i.style.background = color; l.appendChild(i); l.appendChild(document.createTextNode(label)); e.appendChild(l);
+    const val = document.createElement('div'); val.className = 'val'; val.textContent = fmtV(v);
+    const u = document.createElement('small'); u.textContent = 'kg'; val.appendChild(u); e.appendChild(val);
+    const g = document.createElement('div'); g.className = 'goal';
+    g.textContent = v >= goal ? `目標 ${goal}kg 達成 (+${fmtV(v - goal)}kg)` : `目標 ${goal}kg まで ${fmtV(goal - v)}kg`;
+    e.appendChild(g);
+    const bar = document.createElement('div'); bar.className = 'bar';
+    const b = document.createElement('b'); b.style.width = Math.min(100, v / goal * 100) + '%'; b.style.background = color; bar.appendChild(b); e.appendChild(bar);
+    k.appendChild(e);
+  };
+  tile('合計', 'var(--ink-2)', last.v, D.totalGoal);
+  D.lifts.forEach((l, i) => tile(l.name, COLORS[i], S[i][S[i].length - 1].pb, l.goal));
+
+  /* 合計グラフ */
+  panel(document.getElementById('p-total'), {
+    height: 220, aria: '自己ベスト合計の推移', color: 'var(--ink-2)', goal: D.totalGoal,
+    yMax: Math.max(D.totalGoal, last.v), step: total.map(p => ({ t: T(p.d), v: p.v })),
+    hover: total.map(p => ({
+      t: T(p.d), d: p.d, y: p.v,
+      rows: [{ v: fmtV(p.v) + 'kg', label: '合計', color: 'var(--ink-2)' },
+             ...D.lifts.map((l, i) => ({ v: fmtV(p.vals[i]) + 'kg', label: l.name, color: COLORS[i] }))],
+    })),
+  });
+
+  /* 種目ごと */
+  const box = document.getElementById('lifts');
+  box.textContent = '';
+  D.lifts.forEach((l, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'panel';
+    const h = document.createElement('h3');
+    const sw = document.createElement('i'); sw.style.background = COLORS[i]; h.appendChild(sw);
+    h.appendChild(document.createTextNode(l.name));
+    wrap.appendChild(h);
+    const host = document.createElement('div'); wrap.appendChild(host); box.appendChild(wrap);
+    const s = S[i];
+    panel(host, {
+      height: 170, aria: `${l.name}の推移`, color: COLORS[i], goal: l.goal,
+      yMax: Math.max(l.goal, ...s.map(p => p.v)),
+      step: s.filter((p, n) => n === 0 || p.new).map(p => ({ t: T(p.d), v: p.pb })),
+      dots: s.map(p => ({ t: T(p.d), v: p.v })),
+      hover: s.map(p => ({
+        t: T(p.d), d: p.d, y: p.v,
+        rows: [rmMode ? { v: fmtV(p.v) + 'kg', label: `推定1RM (${fmtKg(p.w)}kg × ${p.r}回)` }
+                      : { v: `${fmtKg(p.w)}kg × ${p.r}回`, label: '最重量セット' },
+               { v: fmtV(p.pb) + 'kg', label: p.new ? '自己ベスト更新' : '自己ベスト' }],
+      })),
+    });
+  });
+
+  /* 更新記録の表 */
+  const tb = document.getElementById('pbtable');
+  tb.textContent = '';
+  const head = tb.createTHead().insertRow();
+  ['日付', '種目', rmMode ? '推定1RM (元のセット)' : '重量 × 回数', '更新幅'].forEach((t, n) => { const th = document.createElement('th'); th.textContent = t; if (n > 1) th.className = 'num'; head.appendChild(th); });
+  const body = tb.createTBody();
+  D.lifts.flatMap((l, i) => S[i].filter(p => p.new).map(p => ({ ...p, lift: l.name })))
+    .sort((a, b) => b.d.localeCompare(a.d) || a.lift.localeCompare(b.lift))
+    .forEach(p => {
+      const r = body.insertRow();
+      [fmtDate(p.d), p.lift,
+       rmMode ? `${fmtV(p.v)}kg (${fmtKg(p.w)}kg × ${p.r}回)` : `${fmtKg(p.w)}kg × ${p.r}回`,
+       p.prev ? '+' + fmtV(p.v - p.prev) + 'kg' : '初回'].forEach((t, n) => { const c = r.insertCell(); c.textContent = t; if (n > 1) c.className = 'num'; });
+    });
+}
+
+function boot() {
+  const lastDay = new Date(t1).toISOString().slice(0, 10), firstDay = new Date(t0).toISOString().slice(0, 10);
+  document.getElementById('sub').textContent = `${fmtDate(firstDay)} 〜 ${fmtDate(lastDay)} の記録 (筋トレMEMO + Hevy)`;
+  const bind = (id, key, conv) => {
+    const seg = document.getElementById(id);
+    seg.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      state[key] = conv(b.dataset.v);
+      seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === b ? 'true' : 'false'));
+      render();
+    }));
+  };
+  bind('seg-mode', 'mode', v => v);
+  bind('seg-cap', 'cap', Number);
+  render();
+}
+boot();
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(render, 100); });
+</script>
+</body>
+</html>

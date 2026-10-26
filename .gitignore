@@ -1,0 +1,6 @@
+kintorememo/ocr
+.DS_Store
+__pycache__/
+viz/growth.html
+raw/kintorememo/*/*.PNG
+raw/kintorememo/*/*.png
